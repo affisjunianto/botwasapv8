@@ -1,0 +1,46 @@
+{
+  "name": "affisbot",
+  "version": "8.0.0",
+  "description": "this bot new update",
+  "main": "start.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "start": "node start.js",
+    "test": "test start.js"
+  },
+  "dependencies": {
+    "@adiwajshing/baileys": "^3.5.2",
+    "axios": "^0.21.1",
+    "brainly-scraper": "^1.0.3",
+    "cfonts": "^2.9.3",
+    "cheerio": "^1.0.0-rc.10",
+    "child-process": "^1.0.2",
+    "fluent-ffmpeg": "^2.1.2",
+    "hxz-api": "^1.0.1",
+    "insta-fetcher": "^1.2.3",
+    "jsdom": "^17.0.0",
+    "moment-timezone": "^0.5.33",
+    "node-fetch": "^2.6.1",
+    "performance-now": "^2.1.0",
+    "qs": "^6.10.1",
+    "request": "^2.88.2",
+    "spinnies": "^0.5.1",
+    "yt-search": "^2.10.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/affisjunianto/botwasapv8.git"
+  },
+  "keywords": [
+    "ampibi",
+    "bot"
+  ],
+  "author": "affis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/affisjunianto/botwasapv8/issues"
+  },
+  "homepage": "https://github.com/affisjunianto/botwasapv8#readme"
+}
