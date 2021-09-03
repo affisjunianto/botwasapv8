@@ -16,7 +16,7 @@ const {
 	processTime,
 	Browsers
 } = require("@adiwajshing/baileys");
-const { getBuffer, color, getGroupAdmins, createExif, getRandom, modStick} = require("./lib/function.js");
+const { getBuffer, color, getGroupAdmins, createExif, getRandom, modStick, fetchJson } = require("./lib/function.js");
 const { spawn, exec, execSync } = require("child_process");
 const speed = require('performance-now');
 const ig = require('insta-fetcher');
@@ -38,6 +38,23 @@ battery = {
   charger: "" || false
 };
 blocked = [];
+roomttt = [];
+defttt = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"];
+antideleted = true;
+
+//try feature tantan
+const locateSes = (longit, latid) => {
+  fetchJson(`http://api.mapbox.com/geocoding/v5/mapbox.places/${longit},${latid}.json?access_token=${apikeymapbox}`)
+  .then(res => {
+    desa = res.features[0].context[0].text;
+    kab = res.features[0].context[2].text;
+    kota = res.features[0].context[3].text;
+    prov = res.features[0].context[4].text;
+    negara = ress.features[0].context[5].text;
+    result = { desa: desa, kabupaten:kab ,kota:kota, provinsi:prov,negara:negara};
+    return result;
+  });
+};
 
 //for time
 function tanggal(){
@@ -152,11 +169,41 @@ module.exports = (client) => {
     battery.persen = `${batteryLevel}%`;
     battery.charger = json[2][0][1].live;
   });
+  client.on("message-delete",async(mek) => {
+    if (mek.key.remoteJid == "status@broadcast") return;
+    if (!mek.key.fromMe && mek.key.fromMe) return;
+    if (antideleted === false) return;
+    mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
+    let date = new Date();
+    let region = 'id';
+    let getTime = new Date(0).getTime() - new Date('1 Januari 2021').getTime();
+    let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(((newdate * 1) + getTime) / 84600000) % 5];
+    let localweek = newdate.toLocaleDateString(region, {
+      weekday: 'long'
+    });
+    let localday = newdate.toLocaleDateString(region, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+    const type = Object.keys(mek.message)[0];
+    client.sendMessage(mek.key.remoteJid, `*[ ANTI DELETE ]*\n\n*nama* : @${mek.participant.split("@")[0]}\n*jam* : ${moment.localweek.localday}\n*Type* : ${type}`, MessageType.text, {quoted:mek.message, contextInfo: { "mentionedJid": [mek.participant]}})
+  });
+  client.on("CB:Call", (num) => {
+    let nomer;
+    calling = JSON.parse(JSON.stringify(num));
+    nomer = calling[1].from;
+    client.sendMessage(nomer, `Sorry ${client.user.name} can't receive calls, \ncall = block`, MessageType.text)
+    .then(() => {
+      return client.blockUser(nomer, 'add')
+    })
+  });
   client.on("chat-update", async(mek) => {
     try {
       if (!mek.hasNewMessage) return;
       mek = mek.messages.all()[0];
       if (!mek.message) return
+      if (mek.key.id.startsWith('3EB0') && mek.key.id.length === 12) return
       if (mek.key.fromMe) return
       if (mek.key && mek.key.remoteJid == "status@broadcast") return;
       global.blocked;
@@ -195,6 +242,7 @@ module.exports = (client) => {
             mek.message.extendedTextMessage.text.startsWith(prefix)
           ? mek.message.extendedTextMessage.text
           : "";
+      const budy = (type === 'conversation') ? mek.message.conversation : (type === 'extendedTextMessage') ? mek.message.extendedTextMessage.text : ''
       listbut = (type == 'listResponseMessage') ? mek.message.listResponseMessage.title : ''
       const command = body.slice(1).trim().split(/ +/).shift().toLowerCase()
       const args = body.trim().split(/ +/).slice(1)
@@ -221,6 +269,19 @@ module.exports = (client) => {
       const pushname = mek.key.fromMe ? client.user.name : conts.notify || conts.vname || conts.name || '-'
       const more = String.fromCharCode(8206)
       const readMore = more.repeat(4001)
+      idttt = [];
+      players1 = [];
+      players2 = [];
+      turn = [];
+      for (let i of roomttt) {
+        idttt.push(i.id)
+        players1.push(i.player1)
+        players2.push(i.player2)
+        turn.push(i.turn)
+      }
+      const isTTT = isGroup ? idttt.includes(from) : false
+	    const isPlayer1 = isGroup ? players1.includes(sender) : false
+      const isPlayer2 = isGroup ? players2.includes(sender) : false
       const isUrl = (url) => {
         return url.match(new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%.+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%+.~#?&/=]*)/, 'gi'))
       }
@@ -306,8 +367,8 @@ ${ucapanWaktu} kak ${pushname}
 *❏ About user*
 ├ *name* : ${pushname}
 ├ *nomer* : ${sender.split("@")[0]}
-├ *browser* : ${client.browserDescription[0]}
-├ *server* : ${client.browserDescription[1]}
+├ *Server Name* : ${client.browserDescription[0]}
+├ *Server* : ${client.browserDescription[1]}
 ├ *version* : ${client.browserDescription[2]}
 └ *version Wa* : ${client.user.phone.wa_version}
 ${readMore}
@@ -322,6 +383,10 @@ ${readMore}
 *❏ Edukasi*
 ├ *${prefix}lirik* _<judul lagu>_
 └ *${prefix}brainly* _<soal>_
+
+*❏ Game*
+├ *${prefix}ttt* _<tag orang>_
+└ *${prefix}delttt*
 
 *❏ Download Yt*
 ├ *${prefix}play* _<judul lagu>_
@@ -725,10 +790,6 @@ ${readMore}
           }
           reply(teks)
           break;
-        case 'next':
-          // code
-          break;
-        
         case 'eval':
           if (sender != "6282334297175@s.whatsapp.net") return reply("khusus owner")
           try {
@@ -737,9 +798,159 @@ ${readMore}
             reply(String(e))
           }
           break;
+        case 'ttt':
+        case 'tictactoe':
+          if (!isGroup) return reply("mainkan di group")
+          if (args.length < 1) return reply ("tag orang yang mau kamu aja main")
+          if (isTTT) return reply("permainan sedang berlangsung di group ini")
+          if (mek.message.extendedTextMessage === undefined || mek.message.extendedTextMessage === null) return reply('Tag salah satu orang untuk di ajak bermain')
+          ment = mek.message.extendedTextMessage.contextInfo.mentionedJid;
+          player1 = sender
+          player2 = ment[0]
+          number = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"]
+          id = from
+          turn = player2
+          roomttt.push({player1,player2,id,number,turn})
+          client.sendMessage(from, `@${player1.split("@")[0]} Telah Memulai Game\n\n*@${player2.split("@")[0]}* anda di tantang untuk bermain game tic tac toe oleh *@${player1.split("@")[0]}*\nketik Y/N untuk menerima/menolak tantangan\n\nketik ${prefix}delttt untuk membatalkan permainan di group ini`, text, {contextInfo: {mentionedJid: player2}})
+          break;
+        case 'delttt':
+          if (!isGroup) return reply("command ini hanya untuk group")
+          if (!isTTT) return reply("tidak ada permainan yang sedang berlangsung")
+          rooms = roomttt.filter(titid => titid.id.includes())
+          roomttt = rooms;
+          reply("sukses")
+          break;
         
         default:
-          
+          if (isTTT && isPlayer2) {
+            if (budy.startsWith("Y")){
+              tto = roomttt.filter(gang => gang.id.includes(from))
+              tty = tto[0]
+              number = tto[0].number;
+              teksboard = `*[ TIC TAC TOE GAME ]*
+
+Player1 @${tty.player1.split('@')[0]}=❌
+Player2 @${tty.player2.split('@')[0]}=⭕
+
+${number[1]}${number[2]}${number[3]}
+${number[4]}${number[5]}${number[6]}
+${number[7]}${number[8]}${number[9]}
+
+giliran = @${tty.player1.split('@')[0]}`
+              client.sendMessage(from, teksboard, text, {quoted: mek, contextInfo:{mentionedJid: [tty.player1,tty.player2]}})
+            }
+            if (budy.startsWith('N')) {
+              tto = roomttt.filter(gang => gang.id.includes(from))
+              tty = tto[0]
+              rooms = roomttt.filter(tokek => !tokek.id.includes(from))
+              roomttt = rooms;
+              client.sendMessage(from, `Yahh @${tty.player2.split('@')[0]} Menolak:(`,text,{quoted:mek,contextInfo:{mentionedJid:[tty.player2]}})
+            }
+          }
+          if (isTTT && isPlayer1) {
+            noober = parseInt(budy)
+            if (isNaN(noober)) return 
+            if (noober < 1 || noober > 9) return reply("masukan number dengan benar")
+            main = roomttt.filter(gang => gang.id.includes(from))
+            if (!defttt.includes(main[0].number[noober])) return reply("number sudah di isi, pilih number lain nya")
+            if (main[0].turn.includes(sender)) return reply("tunggu giliran mu dulu ya")
+            s = '❌'
+            main[0].number[noober] = s
+            main[0].turn = main[0].player1
+            rooms = roomttt.filter(bang => !bang.id.includes(from))
+            roomttt = rooms;
+            pop = main[0]
+            roomttt.push(pop)
+            tto = roomttt.filter(hgh => hgh.id.includes(from))
+            tty = tto[0]
+            number = tto[0].number;
+            ttt = `${number[1]}${number[2]}${number[3]}\n${number[4]}${number[5]}${number[6]}\n${number[7]}${number[8]}${number[9]}`
+            
+            winningspeech = () => {
+              ucapan1 = `*[ Hasil pertandingan Tic Tac Toe ]*\n\nyeyyy permainan di menangkan oleh *@${tty.player1.split('@')[0]}*\n`
+              ucapan2 = `*[ Papan Hasil akhir ]*\n\n${ttt}`
+              client.sendMessage(from, ucapan1, text, {quoted:mek, contextInfo:{mentionedJid: [tty.player2]}}) 
+              rooms = roomttt.filter(hhg => !hhg.id.includes(from))
+              return roomttt = rooms 
+            }
+            if (number[1] == s && number[2] == s && number[3] == s) return winningspeech()
+            
+            if (number[1] == s && number[4] == s && number[7] == s) return winningspeech()
+            
+            if (number[1] == s && number[5] == s && number[9] == s) return winningspeech()
+            
+            if (number[2] == s && number[5] == s && number[8] == s) return winningspeech()
+            
+            if (number[4] == s && number[5] == s && number[6] == s) return winningspeech()
+            
+            if (number[7] == s && number[8] == s && number[9] == s) return winningspeech()
+            
+            if (number[3] == s && number[5] == s && number[7] == s) return winningspeech()
+            
+            if (number[3] == s && number[6] == s && number[9] == s) return winningspeech()
+            
+            if (!ttt.includes('1️⃣') && !ttt.includes('2️⃣') && !ttt.includes('3️⃣') && ! ttt.includes('4️⃣') && !ttt.includes('5️⃣') && !ttt.includes('6️⃣') && !ttt.includes('7️⃣') && !ttt.includes('8️⃣') && !ttt.includes('9️⃣')){
+              ucapan1 = `*[ Hasil pertandingan Tic Tac Toe ]*\n\npermainan seri Good Game\n`
+              ucapan2 = `*[ Papan Hasil akhir ]*\n\n${ttt}`
+              reply(ucapan1)
+              naa = roomttt.filter(hhg => !hhg.id.includes(from))
+              return roomttt= naa
+            }
+            ucapan = `*[ TIC TAC TOE GAME ]*\n\nPlayer1 @${tty.player1.split('@')[0]}=❌\nPlayer2 @${tty.player2.split('@')[0]}=⭕\n\n${ttt}\n\ngiliran = @${tty.player2.split('@')[0]}`
+            client.sendMessage(from, ucapan, text, {quoted: mek, contextInfo:{mentionedJid: [tty.player1,tty.player2]}})
+          }
+          if (isTTT && isPlayer2) {
+            noober = parseInt(budy)
+            if (isNaN(noober)) return 
+            if (noober < 1 || noober > 9) return reply("masukan number dengan benar")
+            main = roomttt.filter(gang => gang.id.includes(from))
+            if (!defttt.includes(main[0].number[noober])) return reply("number sudah di isi, pilih number lain nya")
+            if (main[0].turn.includes(sender)) return reply("tunggu giliran mu dulu ya")
+            s = '⭕'
+            main[0].number[noober] = s
+            main[0].turn = main[0].player2
+            rooms = roomttt.filter(bang => !bang.id.includes(from))
+            roomttt = rooms;
+            pop = main[0]
+            roomttt.push(pop)
+            tto = roomttt.filter(hgh => hgh.id.includes(from))
+            tty = tto[0]
+            number = tto[0].number;
+            ttt = `${number[1]}${number[2]}${number[3]}\n${number[4]}${number[5]}${number[6]}\n${number[7]}${number[8]}${number[9]}`
+            
+            winningspeech = () => {
+              ucapan1 = `*[ Hasil pertandingan Tic Tac Toe ]*\n\nyeyyy permainan di menangkan oleh *@${tty.player2.split('@')[0]}*\n`
+              ucapan2 = `*[ Papan Hasil akhir ]*\n\n${ttt}`
+              client.sendMessage(from, ucapan1, text, {quoted:mek, contextInfo:{mentionedJid: [tty.player1]}}) 
+              rooms = roomttt.filter(hhg => !hhg.id.includes(from))
+              return roomttt = rooms 
+            }
+            if (number[1] == s && number[2] == s && number[3] == s) return winningspeech()
+            
+            if (number[1] == s && number[4] == s && number[7] == s) return winningspeech()
+            
+            if (number[1] == s && number[5] == s && number[9] == s) return winningspeech()
+            
+            if (number[2] == s && number[5] == s && number[8] == s) return winningspeech()
+            
+            if (number[4] == s && number[5] == s && number[6] == s) return winningspeech()
+            
+            if (number[7] == s && number[8] == s && number[9] == s) return winningspeech()
+            
+            if (number[3] == s && number[5] == s && number[7] == s) return winningspeech()
+            
+            if (number[3] == s && number[6] == s && number[9] == s) return winningspeech()
+            
+            if (!ttt.includes('1️⃣') && !ttt.includes('2️⃣') && !ttt.includes('3️⃣') && ! ttt.includes('4️⃣') && !ttt.includes('5️⃣') && !ttt.includes('6️⃣') && !ttt.includes('7️⃣') && !ttt.includes('8️⃣') && !ttt.includes('9️⃣')){
+              ucapan1 = `*[ Hasil pertandingan Tic Tac Toe ]*\n\npermainan seri Good Game\n`
+              ucapan2 = `*[ Papan Hasil akhir ]*\n\n${ttt}`
+              reply(ucapan1)
+              naa = roomttt.filter(hhg => !hhg.id.includes(from))
+              return roomttt= naa
+            }
+            ucapan = `*[ TIC TAC TOE GAME ]*\n\nPlayer1 @${tty.player1.split('@')[0]}=❌\nPlayer2 @${tty.player2.split('@')[0]}=⭕\n\n${ttt}\n\ngiliran = @${tty.player1.split('@')[0]}`
+            client.sendMessage(from, ucapan, text, {quoted: mek, contextInfo:{mentionedJid: [tty.player1,tty.player2]}})
+          }
       }
     } catch (e) {
       console.log("Error : %s", color(e, "red"));
