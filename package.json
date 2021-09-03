@@ -24,6 +24,7 @@
     "moment-timezone": "^0.5.33",
     "node-fetch": "^2.6.1",
     "performance-now": "^2.1.0",
+    "qrcode": "^1.4.4",
     "qs": "^6.10.1",
     "request": "^2.88.2",
     "spinnies": "^0.5.1",
