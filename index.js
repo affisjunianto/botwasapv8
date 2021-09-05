@@ -32,6 +32,7 @@ const { jadibot, stopjadibot, listjadibot } = require('./lib/jadibot');
 const { yta, ytv, igdl, upload, formatDate } = require('./lib/ytdl');
 
 //data
+owner = ["6282334297175@s.whatsapp.net"];
 mns = "```";
 battery = {
   persen: "" || "tidak terdeteksi",
@@ -41,20 +42,7 @@ blocked = [];
 roomttt = [];
 defttt = ["0️⃣","1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"];
 antideleted = true;
-
-//try feature tantan
-const locateSes = (longit, latid) => {
-  fetchJson(`http://api.mapbox.com/geocoding/v5/mapbox.places/${longit},${latid}.json?access_token=${apikeymapbox}`)
-  .then(res => {
-    desa = res.features[0].context[0].text;
-    kab = res.features[0].context[2].text;
-    kota = res.features[0].context[3].text;
-    prov = res.features[0].context[4].text;
-    negara = ress.features[0].context[5].text;
-    result = { desa: desa, kabupaten:kab ,kota:kota, provinsi:prov,negara:negara};
-    return result;
-  });
-};
+self = false;
 
 //for time
 function tanggal(){
@@ -204,7 +192,7 @@ module.exports = (client) => {
       mek = mek.messages.all()[0];
       if (!mek.message) return
       if (mek.key.id.startsWith('3EB0') && mek.key.id.length === 12) return
-      if (mek.key.fromMe) return
+      //if (mek.key.fromMe) return
       if (mek.key && mek.key.remoteJid == "status@broadcast") return;
       global.blocked;
       mek.message = (Object.keys(mek.message)[0] === 'ephemeralMessage') ? mek.message.ephemeralMessage.message : mek.message;
@@ -263,12 +251,16 @@ module.exports = (client) => {
       const groupDesc = isGroup ? groupMetadata.desc : ''
       const groupOwner = isGroup ? groupMetadata.owner : ''
       const groupAdmins = isGroup ? getGroupAdmins(groupMembers) : ''
+      const isOwner = owner.includes(sender);
       const isBotGroupAdmins = groupAdmins.includes(botNumber) || false
       const isGroupAdmins = groupAdmins.includes(sender) || false
       const conts = mek.key.fromMe ? client.user.jid : client.contacts[sender] || { notify: jid.replace(/@.+/, '') }
       const pushname = mek.key.fromMe ? client.user.name : conts.notify || conts.vname || conts.name || '-'
       const more = String.fromCharCode(8206)
       const readMore = more.repeat(4001)
+      if (self) {
+        if (!isOwner || !botNumber) return
+      }
       idttt = [];
       players1 = [];
       players2 = [];
@@ -353,24 +345,26 @@ module.exports = (client) => {
       if (isCmd && isGroup) console.log("[",color("command","lime"),"]",time2,color(command,"lime"),"from",color(sender.split("@")[0],"cyan"),"in",color(groupName,"yellow"))
       if (listbut) console.log("[",color("command","lime"),"]",time2,color(listbut,"lime"),"from",color(sender.split("@")[0],"cyan"))
 //list command
-      if (listbut == 'all menu' || command == `${prefix}start`) {
+      if (listbut == 'menu' || command == `${prefix}start`) {
         var menu = `
 ${ucapanWaktu} kak ${pushname}
 
 *❏ About Bot*
 ├ *name* : ${client.user.name}
 ├ *battery* : ${battery.persen}
-├ *charger* : ${battery.charger}
+├ *charger* : ${battery.charger == true ? "sedang di cas" : "sedang tidak di cas"}
+├ *self* : ${self ? "mode self" : "mode public"}
 ├ *phone* : ${client.user.phone.device_manufacturer}
-└ *model* : ${client.user.phone.device_model}
-
-*❏ About user*
-├ *name* : ${pushname}
-├ *nomer* : ${sender.split("@")[0]}
 ├ *Server Name* : ${client.browserDescription[0]}
 ├ *Server* : ${client.browserDescription[1]}
 ├ *version* : ${client.browserDescription[2]}
+├ *model* : ${client.user.phone.device_model}
 └ *version Wa* : ${client.user.phone.wa_version}
+
+*❏ About user*
+├ *name* : ${pushname}
+├ *owner* : ${isOwner ? "Owner":"bukan Owner"}
+└ *nomer* : ${sender.split("@")[0]}
 ${readMore}
 *❏ Sticker*
 └ *${prefix}sticker* _<reply image,video,sticker>_
@@ -385,6 +379,8 @@ ${readMore}
 └ *${prefix}brainly* _<soal>_
 
 *❏ Game*
+├ *${prefix}slot*
+├ *${prefix}suit* _<batu|gunting|kertas>_
 ├ *${prefix}ttt* _<tag orang>_
 └ *${prefix}delttt*
 
@@ -407,13 +403,16 @@ ${readMore}
 ├ *${prefix}join* _<link group>_
 ├ *${prefix}linkgc*
 └ *${prefix}leave*
+
+*❏ Owner*
+└ *${prefix}mode*
 `;
         sendButtonMsg(menu, `runtime: ${runtime(process.uptime())}`,[{
           buttonId: `${prefix}owner`,
-            buttonText: {
-              displayText: "owner"
-            },
-            type: 1
+          buttonText: {
+            displayText: "owner"
+          },
+          type: 1
           },{
             buttonId: `${prefix}github`,
             buttonText: {
@@ -442,18 +441,43 @@ ${readMore}
       }
 //case
       switch (command) {
+        case 'mode':
+          sendButtonMsg(`${ucapanWaktu} ${isOwner == true ? "owner\nsilahkan pilih mode di bawah ini" : "kak\nanda bukan owner\njadi percumah kalo kamu pencet"}`,`${tanggal()}`,[{
+            buttonId:`${prefix}self on`,
+            buttonText: {
+              displayText: `on`
+            },
+            type: 1
+          },{
+            buttonId: `${prefix}self off`,
+            buttonText: {
+              displayText: 'off'
+            },
+            type: 1
+          }])
+          break;
+        case 'self':
+          if (!isOwner) return reply("anda bukan owner yak:)")
+          if (args[0] === "on") {
+            self = true;
+            reply("bot sekarang telah menjadi self mode")
+          } else if (args[0] === "off") {
+            self = false;
+            reply("bot sekarang telah menjadi public mode")
+          }
+          break;
         case 'help':
         case 'menu':
           var menulist = client.prepareMessageFromContent(from, {
             "listMessage" :{
-              "title": `${ucapanWaktu} kak ${pushname}\n\nini adalah bot ${client.user.name}\nbot ini bisa di buat menggunakan termux. untuk script nya bisa di download di github owner\ndan untuk fitur fitur nya bisa kalian add sendiri:)\n\nThanks for suports\nortu\nfadhil\nangga\nbryan\nhanz\nadiwajshing\ntermos bot maker\nmhankbarbar`,
+              "title": `${ucapanWaktu} kak ${pushname}\n\nini adalah bot ${client.user.name}\nbot ini bisa di buat menggunakan termux. untuk script nya bisa di download di github owner\ndan untuk fitur fitur nya bisa kalian add sendiri:)\n\nThanks for suports\nortu\nfadhil\nangga\nhanz\nadiwajshing\ntermos bot maker\nmhankbarbar`,
               "description": `bot ini berjalan selama \n${runtime(process.uptime())}`,
               "buttonText": "click here👈",
               "listType": "SINGLE_SELECT",
               "sections": [{
                 "title": `${tanggal()}`,
                 "rows": [{
-                    "title": "all menu",
+                    "title": "menu",
                     "rowId": "0",
                     "description": ""
                   },{
@@ -820,6 +844,92 @@ ${readMore}
           roomttt = rooms;
           reply("sukses")
           break;
+        case 'suit':
+          sendButtonMsg(`pilih salah satu`,``,[{
+            buttonId:`${prefix}playsuit batu`,
+            buttonText: {
+              displayText: `batu (🗿)`
+            },
+            type: 1
+          },{
+            buttonId: `${prefix}playsuit gunting`,
+            buttonText: {
+              displayText: 'gunting (✂️)'
+            },
+            type: 1
+          },{
+            buttonId: `${prefix}playsuit kertas`,
+            buttonText: {
+              displayText: 'kertas (📄)'
+            },
+            type: 1
+          }])
+          break;
+        case 'playsuit':
+          if (args.length < 1) return reply("pilih batu/gunting/kertas")
+          if (args[0] === "gunting") {
+            gunting = [
+              "Kamu *Gunting*\nAku *Kertas*\nKamu Menang 😔",
+              "Kamu *Gunting*\nAku *Batu*\nKamu Kalah 🙂",
+              "Kamu *Gunting*\nAku *Gunting*\nKita Seri 😏"
+              ]
+            gun = gunting[Math.floor(Math.random() * gunting.length)]
+            reply(gun)
+          } else if (args[0] === 'kertas') {
+            ker = [
+              "Kamu *Kertas*\nAku *Batu*\nKamu Menang 😔",
+              "Kamu *Kertas*\nAku *Gunting*\nKamu Kalah 🙂",
+              "Kamu *Kertas*\nAku *Kertas*\nKita Seri 😏"
+              ]
+            kertas = ker[Math.floor(Math.random() * ker.length)]
+          	reply(kertas)
+          } else if (args[0] === 'batu') {
+            bat = [
+              "Kamu *Batu*\nAku *Gunting*\nKamu Menang ??",
+              "Kamu *Batu*\nAku *Kertas*\nKamu Kalah 🙂",
+              "Kamu *Batu*\nAku *Batu*\nKita Seri 😏"
+              ]
+            batu = bat[Math.floor(Math.random() * bat.length)]
+            reply(batu)
+          } else {
+            reply('Pilih gunting/batu/kertas')
+          }
+          break; 
+        case 'slot':
+          isiSlot = ["🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍒","🍑","🥭","🍍"];
+          slotBoard = ["","","","","","","","",""];
+          for (let i = 0; i < slotBoard.length; i++) {
+            itemSlot = isiSlot[Math.floor(Math.random() * isiSlot.length)];
+            slotBoard[i] = itemSlot
+          }
+          if (slotBoard[1] == slotBoard[4] && slotBoard[4] == slotBoard[7] && slotBoard[7] == slotBoard[1]) {
+            reply(`*[ MENANG ]*\n\n ${slotBoard[0]} : ${slotBoard[3]} : ${slotBoard[6]}\n ${slotBoard[1]} : ${slotBoard[4]} : ${slotBoard[7]} <===\n ${slotBoard[2]} : ${slotBoard[5]} : ${slotBoard[8]} \n\n*[ SLOT ]*\nketerangan: jika anda mendapatkan 3 baris buah yang sama maka anda menang\ncontoh: 🍒 : 🍒 : 🍒 <===`)
+          } else {
+          reply(`*[ KALAH ]*\n\n ${slotBoard[0]} : ${slotBoard[3]} : ${slotBoard[6]}\n ${slotBoard[1]} : ${slotBoard[4]} : ${slotBoard[7]} <===\n ${slotBoard[2]} : ${slotBoard[5]} : ${slotBoard[8]} \n\n*[ SLOT ]*\nketerangan: jika anda mendapatkan 3 baris buah yang sama maka anda menang\ncontoh: 🍒 : 🍒 : 🍒 <===`)
+          }
+          break;
+        case 'caripesan':
+          if (args.length <1) return reply(`query salah\ncontoh ${prefix}caripesan Hi|5`)
+          if (q.includes("|")) {
+            try {
+              jum = q.split("|")[1]
+              if (jum > 10) return reply("jumblah terlalu banyak\nminimal: 10")
+              to = parseInt(jum) + 1
+              res = await client.searchMessages(q.split(0), from, to,1)
+              if (res.messages.length < 2) return reply("pesan tidak di temukan")
+              if (res.messages.length < parseInt(to)) reply(`hanya di temukan ${res.messages.length - 1} pesan`)
+              for (let i = 1; i < res.messages.length; i++) {
+                if (res.messages[i].message) {
+                  client.sendMessage(from, "nih pesan nya!!", text, {quoted: res.messages[i]})
+                }
+              }
+            } catch (e) {
+              reply("maaf error:)\ncoba lagi")
+            }
+          } else {
+            return(`maaf masukan query yang benar\ncontoh: ${prefix}${command} halo|5`)
+          }
+          break;
         
         default:
           if (isTTT && isPlayer2) {
@@ -854,7 +964,7 @@ giliran = @${tty.player1.split('@')[0]}`
             main = roomttt.filter(gang => gang.id.includes(from))
             if (!defttt.includes(main[0].number[noober])) return reply("number sudah di isi, pilih number lain nya")
             if (main[0].turn.includes(sender)) return reply("tunggu giliran mu dulu ya")
-            s = '❌'
+            s = '❎'
             main[0].number[noober] = s
             main[0].turn = main[0].player1
             rooms = roomttt.filter(bang => !bang.id.includes(from))
@@ -906,7 +1016,7 @@ giliran = @${tty.player1.split('@')[0]}`
             main = roomttt.filter(gang => gang.id.includes(from))
             if (!defttt.includes(main[0].number[noober])) return reply("number sudah di isi, pilih number lain nya")
             if (main[0].turn.includes(sender)) return reply("tunggu giliran mu dulu ya")
-            s = '⭕'
+            s = '🅾️'
             main[0].number[noober] = s
             main[0].turn = main[0].player2
             rooms = roomttt.filter(bang => !bang.id.includes(from))
